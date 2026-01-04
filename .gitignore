@@ -205,3 +205,22 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Podcast Transcriber Project
+# Temporary audio files directory
+temp_audio/
+
+# Audio files
+*.mp3
+*.m4a
+*.wav
+*.aac
+*.ogg
+*.flac
+
+# macOS
+.DS_Store
+
+# Whisper model cache (optional - models can be large)
+# Uncomment if you want to exclude cached models
+# ~/.cache/whisper/
