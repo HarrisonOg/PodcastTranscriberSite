@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podcast Transcriber</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #2563eb;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .transcript-segment {
+            transition: background-color 0.2s;
+        }
+
+        .transcript-segment:hover {
+            background-color: #f9fafb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Podcast Transcriber</h1>
+            <p class="text-gray-600">Paste a podcast episode URL to get a searchable transcript with timestamps</p>
+        </div>
+
+        <!-- Input Section -->
+        <div id="input-section" class="mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <label for="podcast-url" class="block text-sm font-medium text-gray-700 mb-2">
+                    Podcast Episode URL
+                </label>
+                <input
+                    type="url"
+                    id="podcast-url"
+                    placeholder="https://example.com/podcast-episode.mp3"
+                    class="w-full p-4 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                    onclick="transcribe()"
+                    class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                    Transcribe Episode
+                </button>
+                <p class="mt-4 text-sm text-gray-500">
+                    Supported: Direct MP3/M4A links, public RSS feeds, YouTube, SoundCloud
+                </p>
+            </div>
+        </div>
+
+        <!-- Loading Section -->
+        <div id="loading" class="hidden">
+            <div class="bg-white p-8 rounded-lg shadow-md">
+                <div class="text-center">
+                    <div class="spinner"></div>
+                    <p class="mt-4 text-gray-600 font-medium">Transcribing your podcast...</p>
+                    <p class="mt-2 text-sm text-gray-500">This may take a few minutes depending on episode length</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden">
+            <!-- Search Box -->
+            <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+                <input
+                    type="text"
+                    id="search-box"
+                    placeholder="Search transcript..."
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    oninput="filterTranscript()"
+                />
+            </div>
+
+            <!-- Episode Title -->
+            <h2 id="episode-title" class="text-2xl font-bold text-gray-900 mb-4"></h2>
+
+            <!-- Transcript Container -->
+            <div class="bg-white p-6 rounded-lg shadow-md mb-4">
+                <div id="transcript-container">
+                    <!-- Transcript segments will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Download Options -->
+            <div class="flex gap-4 flex-wrap">
+                <button
+                    onclick="downloadTranscript('txt')"
+                    class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                    Download as TXT
+                </button>
+                <button
+                    onclick="downloadTranscript('srt')"
+                    class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                    Download as SRT
+                </button>
+                <button
+                    onclick="startOver()"
+                    class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                    Transcribe Another
+                </button>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="hidden mt-4">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                <p class="font-medium">Error</p>
+                <p id="error-text" class="text-sm"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let transcriptData = null;
+
+        async function transcribe() {
+            // JavaScript implementation will be added in Task 13
+        }
+
+        function displayTranscript(data) {
+            // JavaScript implementation will be added in Task 13
+        }
+
+        function filterTranscript() {
+            // JavaScript implementation will be added in Task 13
+        }
+
+        function downloadTranscript(format) {
+            // JavaScript implementation will be added in Task 13
+        }
+
+        function startOver() {
+            // JavaScript implementation will be added in Task 13
+        }
+
+        function showError(message) {
+            // JavaScript implementation will be added in Task 13
+        }
+    </script>
+</body>
+</html>
