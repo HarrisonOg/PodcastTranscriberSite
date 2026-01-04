@@ -1,0 +1,26 @@
+# Core Web Framework
+flask==3.0.0
+
+# Transcription
+openai-whisper==20231117
+
+# Audio Download & Processing
+yt-dlp==2023.12.30
+
+# RSS Feed Parsing
+feedparser==6.0.10
+
+# Production Server
+gunicorn==21.2.0
+
+# URL Validation (Security)
+validators==0.22.0
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Rate Limiting (Optional - uncomment if needed)
+# flask-limiter==3.5.0
+
+# CORS Support (Optional - uncomment if needed for separate frontend)
+# flask-cors==4.0.0
