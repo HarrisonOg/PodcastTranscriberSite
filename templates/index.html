@@ -132,28 +132,179 @@
         let transcriptData = null;
 
         async function transcribe() {
-            // JavaScript implementation will be added in Task 13
+            const url = document.getElementById('podcast-url').value.trim();
+
+            if (!url) {
+                showError('Please enter a podcast URL');
+                return;
+            }
+
+            // Hide input and error, show loading
+            document.getElementById('input-section').classList.add('hidden');
+            document.getElementById('error-message').classList.add('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+
+            try {
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    transcriptData = data;
+                    displayTranscript(data);
+                } else {
+                    throw new Error(data.error || 'Transcription failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+                document.getElementById('input-section').classList.remove('hidden');
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
         }
 
         function displayTranscript(data) {
-            // JavaScript implementation will be added in Task 13
+            document.getElementById('episode-title').textContent = data.title || 'Transcript';
+
+            const container = document.getElementById('transcript-container');
+            container.innerHTML = '';
+
+            data.transcript.forEach((segment, index) => {
+                const div = document.createElement('div');
+                div.className = 'transcript-segment mb-4 p-2 rounded';
+                div.dataset.index = index;
+                div.innerHTML = `
+                    <span class="timestamp text-blue-600 font-mono text-sm cursor-pointer hover:underline"
+                          onclick="seekTo(${segment.start_seconds})">
+                        [${segment.timestamp}]
+                    </span>
+                    <span class="text-gray-800 ml-2">${escapeHtml(segment.text)}</span>
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('search-box').value = '';
         }
 
         function filterTranscript() {
-            // JavaScript implementation will be added in Task 13
+            const searchTerm = document.getElementById('search-box').value.toLowerCase();
+            const segments = document.querySelectorAll('.transcript-segment');
+
+            let visibleCount = 0;
+            segments.forEach(segment => {
+                const text = segment.textContent.toLowerCase();
+                const isVisible = text.includes(searchTerm);
+                segment.style.display = isVisible ? 'block' : 'none';
+                if (isVisible) visibleCount++;
+            });
+
+            // Show message if no results
+            const container = document.getElementById('transcript-container');
+            const existingMsg = container.querySelector('.no-results-message');
+            if (existingMsg) existingMsg.remove();
+
+            if (visibleCount === 0 && searchTerm) {
+                const msg = document.createElement('p');
+                msg.className = 'no-results-message text-gray-500 text-center py-4';
+                msg.textContent = 'No matching segments found';
+                container.appendChild(msg);
+            }
         }
 
         function downloadTranscript(format) {
-            // JavaScript implementation will be added in Task 13
+            if (!transcriptData) {
+                showError('No transcript available to download');
+                return;
+            }
+
+            let content = '';
+            let filename = '';
+            let mimeType = '';
+
+            if (format === 'txt') {
+                // Plain text format
+                content = transcriptData.transcript.map(segment =>
+                    `[${segment.timestamp}] ${segment.text}`
+                ).join('\n\n');
+                filename = 'transcript.txt';
+                mimeType = 'text/plain';
+            } else if (format === 'srt') {
+                // SRT subtitle format
+                content = transcriptData.transcript.map((segment, index) => {
+                    const startTime = formatSRTTimestamp(segment.start_seconds);
+                    const endTime = formatSRTTimestamp(
+                        index < transcriptData.transcript.length - 1
+                            ? transcriptData.transcript[index + 1].start_seconds
+                            : segment.start_seconds + 5
+                    );
+                    return `${index + 1}\n${startTime} --> ${endTime}\n${segment.text}\n`;
+                }).join('\n');
+                filename = 'transcript.srt';
+                mimeType = 'text/srt';
+            }
+
+            // Create download
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         function startOver() {
-            // JavaScript implementation will be added in Task 13
+            document.getElementById('podcast-url').value = '';
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('error-message').classList.add('hidden');
+            document.getElementById('input-section').classList.remove('hidden');
+            transcriptData = null;
         }
 
         function showError(message) {
-            // JavaScript implementation will be added in Task 13
+            document.getElementById('error-text').textContent = message;
+            document.getElementById('error-message').classList.remove('hidden');
         }
+
+        function seekTo(seconds) {
+            // Placeholder for future audio player integration
+            console.log('Seek to:', seconds, 'seconds');
+            // Could integrate with <audio> element or external player
+        }
+
+        function formatSRTTimestamp(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            const ms = Math.floor((seconds % 1) * 1000);
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('podcast-url').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    transcribe();
+                }
+            });
+        });
     </script>
 </body>
 </html>
