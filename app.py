@@ -163,7 +163,67 @@ def transcribe():
     Main transcription endpoint
     Expects JSON: {"url": "podcast_episode_url"}
     """
-    pass
+    data = request.json
+    url = data.get('url') if data else None
+
+    if not url:
+        logger.warning("Transcription request failed: No URL provided")
+        return jsonify({'error': 'No URL provided'}), 400
+
+    # Validate URL for security
+    if not is_safe_url(url):
+        logger.warning(f"Transcription request failed: Invalid URL - {url}")
+        return jsonify({'error': 'Invalid URL. Please provide a valid HTTP or HTTPS URL.'}), 400
+
+    audio_file = None
+
+    try:
+        # Create temp directory
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+        # Generate unique filename
+        file_id = generate_unique_id()
+        audio_path = f"{UPLOAD_FOLDER}/{file_id}"
+
+        logger.info(f"Processing transcription request for URL: {url}")
+
+        # Download audio
+        episode_title = download_audio(url, audio_path)
+
+        # Find the downloaded file (yt-dlp adds extension)
+        audio_file = find_downloaded_file(file_id)
+
+        # Transcribe
+        result = transcribe_audio(audio_file)
+
+        # Format output
+        segments = format_transcript(result)
+
+        logger.info(f"Transcription completed successfully for: {episode_title}")
+
+        return jsonify({
+            'success': True,
+            'title': episode_title,
+            'transcript': segments,
+            'full_text': result['text']
+        })
+
+    except FileNotFoundError as e:
+        logger.error(f"File not found during transcription: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to process audio file. Please try again.'}), 500
+
+    except Exception as e:
+        logger.error(f"Transcription failed for {url}: {e}", exc_info=True)
+        return jsonify({'error': 'Transcription failed. Please check the URL and try again.'}), 500
+
+    finally:
+        # Clean up audio file
+        if audio_file and os.path.exists(audio_file):
+            try:
+                os.remove(audio_file)
+                logger.info(f"Cleaned up temp file: {audio_file}")
+            except Exception as e:
+                logger.error(f"Failed to clean up temp file {audio_file}: {e}")
 
 
 @app.route('/health')
