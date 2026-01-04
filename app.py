@@ -66,7 +66,21 @@ def transcribe_audio(audio_path):
     Transcribe audio file using Whisper
     Returns transcript with timestamps
     """
-    pass
+    logger.info(f"Starting transcription for: {audio_path}")
+
+    try:
+        result = model.transcribe(
+            audio_path,
+            verbose=True,
+            language='en',
+            task='transcribe'
+        )
+
+        logger.info(f"Transcription completed. Segments: {len(result.get('segments', []))}")
+        return result
+    except Exception as e:
+        logger.error(f"Failed to transcribe audio {audio_path}: {e}", exc_info=True)
+        raise
 
 
 def format_transcript(result):
