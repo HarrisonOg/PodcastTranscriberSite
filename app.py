@@ -6,6 +6,7 @@ from pathlib import Path
 
 from flask import Flask, request, jsonify, render_template
 import whisper
+import yt_dlp
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -35,7 +36,29 @@ def download_audio(url, output_path):
     Download audio from URL using yt-dlp
     Works with direct MP3 links and podcast feeds
     """
-    pass
+    logger.info(f"Starting audio download from: {url}")
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': output_path,
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'quiet': False,
+        'no_warnings': False,
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            title = info.get('title', 'Unknown Episode')
+            logger.info(f"Successfully downloaded: {title}")
+            return title
+    except Exception as e:
+        logger.error(f"Failed to download audio from {url}: {e}", exc_info=True)
+        raise
 
 
 def transcribe_audio(audio_path):
