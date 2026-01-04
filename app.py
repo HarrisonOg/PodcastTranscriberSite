@@ -3,10 +3,12 @@ import logging
 import uuid
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 from flask import Flask, request, jsonify, render_template
 import whisper
 import yt_dlp
+import validators
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,6 +31,28 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 logger.info(f"Loading Whisper model: {WHISPER_MODEL}")
 model = whisper.load_model(WHISPER_MODEL)
 logger.info("Whisper model loaded successfully")
+
+
+def is_safe_url(url):
+    """
+    Validate URL to prevent injection attacks
+    Only allows HTTP and HTTPS schemes
+    """
+    if not url or not isinstance(url, str):
+        logger.warning("URL validation failed: empty or invalid type")
+        return False
+
+    if not validators.url(url):
+        logger.warning(f"URL validation failed: invalid format - {url}")
+        return False
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ['http', 'https']:
+        logger.warning(f"URL validation failed: invalid scheme '{parsed.scheme}' - {url}")
+        return False
+
+    logger.info(f"URL validation passed: {url}")
+    return True
 
 
 def download_audio(url, output_path):
