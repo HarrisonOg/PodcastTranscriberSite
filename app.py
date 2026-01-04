@@ -88,7 +88,18 @@ def format_transcript(result):
     Format Whisper output into readable transcript
     with timestamps for each segment
     """
-    pass
+    segments = []
+    for segment in result['segments']:
+        timestamp = format_timestamp(segment['start'])
+        text = segment['text'].strip()
+        segments.append({
+            'timestamp': timestamp,
+            'start_seconds': segment['start'],
+            'text': text
+        })
+
+    logger.info(f"Formatted {len(segments)} transcript segments")
+    return segments
 
 
 def format_timestamp(seconds):
