@@ -28,6 +28,41 @@
         .transcript-segment:hover {
             background-color: #f9fafb;
         }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 9999px;
+            transition: width 0.3s ease-in-out;
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .progress-downloading {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        }
+
+        .progress-transcribing {
+            background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+        }
+
+        .progress-completed {
+            background: linear-gradient(90deg, #10b981, #34d399);
+            animation: none;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -67,8 +102,20 @@
             <div class="bg-white p-8 rounded-lg shadow-md">
                 <div class="text-center">
                     <div class="spinner"></div>
-                    <p class="mt-4 text-gray-600 font-medium">Transcribing your podcast...</p>
-                    <p class="mt-2 text-sm text-gray-500">This may take a few minutes depending on episode length</p>
+                    <p id="progress-message" class="mt-4 text-gray-600 font-medium">Initializing...</p>
+
+                    <!-- Progress Bar -->
+                    <div class="mt-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span id="progress-status" class="text-sm text-gray-500">Starting...</span>
+                            <span id="progress-percent" class="text-sm font-semibold text-gray-700">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <p class="mt-4 text-sm text-gray-500">This may take a few minutes depending on episode length</p>
                 </div>
             </div>
         </div>
@@ -130,6 +177,7 @@
 
     <script>
         let transcriptData = null;
+        let eventSource = null;
 
         async function transcribe() {
             const url = document.getElementById('podcast-url').value.trim();
@@ -145,7 +193,11 @@
             document.getElementById('results').classList.add('hidden');
             document.getElementById('loading').classList.remove('hidden');
 
+            // Reset progress UI
+            updateProgress(0, 'Initializing...', 'pending');
+
             try {
+                // Phase 1: Start transcription job
                 const response = await fetch('/transcribe', {
                     method: 'POST',
                     headers: {
@@ -156,18 +208,92 @@
 
                 const data = await response.json();
 
-                if (response.ok && data.success) {
-                    transcriptData = data;
-                    displayTranscript(data);
-                } else {
-                    throw new Error(data.error || 'Transcription failed. Please try again.');
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to start transcription');
                 }
+
+                const jobId = data.job_id;
+
+                // Phase 2: Listen to progress updates via SSE
+                listenToProgress(jobId);
+
             } catch (error) {
                 console.error('Error:', error);
                 showError(error.message);
                 document.getElementById('input-section').classList.remove('hidden');
-            } finally {
                 document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        function listenToProgress(jobId) {
+            // Create EventSource connection
+            eventSource = new EventSource(`/progress/${jobId}`);
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+
+                    // Handle progress updates
+                    if (data.progress !== undefined) {
+                        updateProgress(data.progress, data.message, data.status);
+                    }
+
+                    // Handle completion
+                    if (data.status === 'completed' && data.result) {
+                        transcriptData = data.result;
+                        displayTranscript(data.result);
+                        closeEventSource();
+                        document.getElementById('loading').classList.add('hidden');
+                    }
+
+                    // Handle errors
+                    if (data.status === 'failed') {
+                        throw new Error(data.error || 'Transcription failed');
+                    }
+
+                } catch (error) {
+                    console.error('Error processing progress:', error);
+                    showError(error.message);
+                    closeEventSource();
+                    document.getElementById('input-section').classList.remove('hidden');
+                    document.getElementById('loading').classList.add('hidden');
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('EventSource error:', error);
+                showError('Connection lost. Please try again.');
+                closeEventSource();
+                document.getElementById('input-section').classList.remove('hidden');
+                document.getElementById('loading').classList.add('hidden');
+            };
+        }
+
+        function updateProgress(percent, message, status) {
+            // Update progress bar width
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = percent + '%';
+
+            // Update progress bar color based on status
+            progressBar.className = 'progress-bar';
+            if (status === 'downloading') {
+                progressBar.classList.add('progress-downloading');
+            } else if (status === 'transcribing') {
+                progressBar.classList.add('progress-transcribing');
+            } else if (status === 'completed') {
+                progressBar.classList.add('progress-completed');
+            }
+
+            // Update text
+            document.getElementById('progress-percent').textContent = percent + '%';
+            document.getElementById('progress-message').textContent = message;
+            document.getElementById('progress-status').textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+
+        function closeEventSource() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
             }
         }
 
